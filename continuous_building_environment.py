@@ -1,5 +1,5 @@
 __all__ = ["ContinuousBuildingControlEnvironment"]
-#test
+
 import numpy as np
 from scipy import signal
 import pandas as pd
@@ -172,8 +172,20 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.m_dot_max = self.m_dot_min*550/140
         self.seed()
         
-        # Define the action space in OpenAI gym format
-        self.action_space = spaces.Box(low = np.array([0.]), high = np.array([1.]), dtype=np.float32)
+        # Supervisory control: RL gives [SAT_setpoint, ZoneT_setpoint]
+        self.action_space = spaces.Box(
+            low=np.array([12.0, 20.0]),   # [SAT_sp, ZoneT_sp]
+            high=np.array([18.0, 24.0]),
+            dtype=np.float32
+        )
+        
+        # --- PI controller parameters ---
+        self.Kp = 0.8
+        self.Ki = 0.05
+        self.integral_error = 0.0
+        self.pi_interval = 60  # seconds (PI runs every 1 minute)
+        self.m_fan = self.m_dot_min  # initial damper (kg/s)
+
         # Lower bound of the observation space
         self.low = np.array([10.0, 15.0, 21.0, -40.0, 0., 50., 0.])
         # Upper bound of the observation space
@@ -315,4 +327,5 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.state = (np.array([T_env_0, T_air_0, T_cor, T_out, Qsg, Qint, Hour]) - self.low)/(self.high - self.low)
         
         return np.array(self.state)
+
 
