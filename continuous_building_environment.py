@@ -1,5 +1,5 @@
 __all__ = ["ContinuousBuildingControlEnvironment"]
-
+#test
 import numpy as np
 from scipy import signal
 import pandas as pd
@@ -315,3 +315,4 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.state = (np.array([T_env_0, T_air_0, T_cor, T_out, Qsg, Qint, Hour]) - self.low)/(self.high - self.low)
         
         return np.array(self.state)
+
