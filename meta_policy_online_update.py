@@ -30,7 +30,7 @@ def main():
     temp_metric_list, lb_list, ub_list = \
     ddpg_online(env = env, env_idx = 0, policy_file = policy_file,
                 start = online_start, end = online_end,
-                gamma = 0.99, epochs = 100,
+                gamma = 0.99, epochs = 50,
                 pi_lr = 1e-4, q_lr = 1e-3,
                 hidden_sizes = (64, 64, 64, 64), activation = tf.nn.relu,
                 max_ep_len = 4320, save_freq = 5, steps_per_epoch = 4320,
