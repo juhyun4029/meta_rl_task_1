@@ -172,7 +172,7 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.m_dot_max = self.m_dot_min*550/140
         self.seed()
         
-        # Supervisory control: RL gives [SAT_setpoint, ZoneT_setpoint]
+        # Supervisory control: RL gives [SAT_setpoint, ZAT_setpoint]
         self.action_space = spaces.Box(
             low=np.array([10.0, 20.0]),   # [SAT_sp, ZAT_sp]
             high=np.array([15.5, 24.0]),
@@ -233,7 +233,7 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         
         
         # --- Supervisory control + PI inner loop ---
-        SAT_sp, ZAT_sp = a_t[0], a_t[1]   # [SAT_setpoint, ZoneT_setpoint]
+        SAT_sp, ZAT_sp = a_t[0], a_t[1]   # [SAT_setpoint, ZAT_setpoint]
         T_zone = s_t[1]
         total_energy = 0.0
         n_loops = int(self.dt / self.pi_interval)  # how many PI updates inside one RL step
@@ -338,6 +338,7 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.state = (np.array([T_env_0, T_air_0, T_cor, T_out, Qsg, Qint, Hour]) - self.low)/(self.high - self.low)
         
         return np.array(self.state)
+
 
 
 
