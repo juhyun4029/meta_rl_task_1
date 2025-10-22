@@ -110,7 +110,10 @@ def ddpg_online(env, env_idx, policy_file, start, end,
         a = sess.run(pi, feed_dict={x_ph: o.reshape(1,-1)})[0]
         a += noise_scale * np.random.randn(act_dim)
         return np.clip(a, act_limit_l, act_limit_h)
-
+             
+    if os.path.exists("training_log.csv"):
+        os.remove("training_log.csv")
+             
     # Prepare for interaction with environment
     total_steps = steps_per_epoch * epochs
     o, ep_ret, ep_len = env.reset(), 0, 0
@@ -193,7 +196,11 @@ def ddpg_online(env, env_idx, policy_file, start, end,
         if (t+1) % steps_per_epoch == 0:
             epoch = (t+1) // steps_per_epoch
             print('epoch:', epoch, 'epi_ret:', ep_ret_print)
-        
+                 
+               # --- Append training log ---
+            with open("training_log.csv", "a") as f:
+                f.write(f"{epoch},{ep_ret_print},{energy_list[-1]},{penalty_list[-1]},{temp_metric_list[-1]}\n")
+                     
             # Save model
             if (epoch % save_freq == 0) or (epoch == epochs):
                 saver = tf.compat.v1.train.Saver()
@@ -218,3 +225,4 @@ def ddpg_online(env, env_idx, policy_file, start, end,
         action_list = action_list.reshape(-1, 1)
 
     return T_air, time, T_out, Q_SG, action_list, np.array(energy_list[1:]), np.array(penalty_list[1:]), np.array(temp_metric_list[1:]), lb_list, ub_list
+
