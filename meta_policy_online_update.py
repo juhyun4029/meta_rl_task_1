@@ -43,7 +43,7 @@ def main():
     #            action_list[2100:2300], energy_list[2100:2300], penalty_list[2100:2300], 
     #            lb_list[2100:2300], ub_list[2100:2300], 9999, "meta")
     
-	print(f"Energy Use in kWh: {energy_list[-1]:.2f}")
+    print(f"Energy Use in kWh: {energy_list[-1]:.2f}")
 	print(f"# of Hours out of Bounds: {penalty_list[-1]:.0f}")
 	print(f"Temperature Exceedance in degC-hr: {temp_metric_list[-1]:.2f}")
 	
