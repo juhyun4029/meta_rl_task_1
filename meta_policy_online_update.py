@@ -43,13 +43,13 @@ def main():
     #            action_list[2100:2300], energy_list[2100:2300], penalty_list[2100:2300], 
     #            lb_list[2100:2300], ub_list[2100:2300], 9999, "meta")
     
-    print(f"Energy Use in kWh: {energy_list[-1]:.2f}")
-	print(f"# of Hours out of Bounds: {penalty_list[-1]:.0f}")
-	print(f"Temperature Exceedance in degC-hr: {temp_metric_list[-1]:.2f}")
+    print(f"Energy Use in kWh: {float(energy_list[-1]):.2f}")
+	print(f"# of Hours out of Bounds: {float(penalty_list[-1]):.0f}")
+	print(f"Temperature Exceedance in degC-hr: {float(temp_metric_list[-1]):.2f}")
 	
 	# Handle multi-dimensional action array gracefully
 	if isinstance(action_list, np.ndarray) and action_list.ndim > 1:
-	    df_action = pd.DataFrame(action_list, columns=['SAT_sp', 'ZoneT_sp'])
+	    df_action = pd.DataFrame(action_list, columns=['SAT_sp', 'ZAT_sp'])
 	else:
 	    df_action = pd.DataFrame({'action': action_list})
 	
