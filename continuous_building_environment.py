@@ -174,7 +174,7 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         
         # Supervisory control: RL gives [SAT_setpoint, ZoneT_setpoint]
         self.action_space = spaces.Box(
-            low=np.array([12.0, 20.0]),   # [SAT_sp, ZoneT_sp]
+            low=np.array([12.0, 20.0]),   # [SAT_sp, ZAT_sp]
             high=np.array([18.0, 24.0]),
             dtype=np.float32
         )
@@ -232,34 +232,36 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         COPc = EFc[0] + T_out*EFc[1] + Tlvh*EFc[2] + (T_out**2)*EFc[3] + (Tlvc**2)*EFc[4] + T_out*Tlvc*EFc[5]
         
         
-        # Rescale the action
-        if a_t == 0.5:
-            u_t = self.m_dot_min*self.cp_air*(self.T_sup - s_t[1])
-            u_c = u_t
-            u_h = 0
-            m_fan = self.m_dot_min
-            energy = -1*u_t/COPc/1000/2
-        elif a_t > 0.5:
-            u_t = ((a_t - 0.5)/0.5)*self.Qh_max + self.m_dot_min*self.cp_air*(self.T_sup - s_t[1])
-            u_c = self.m_dot_min*self.cp_air*(self.T_sup - s_t[1])
-            u_h = ((a_t - 0.5)/0.5)*self.Qh_max
-            m_fan = self.m_dot_min
-            energy = (((a_t - 0.5)/0.5)*self.Qh_max/COPh + self.m_dot_min*self.cp_air*(s_t[1] - self.T_sup)/COPc)/1000/2             
-        else:
-            m_fan = (self.m_dot_max - self.m_dot_min)*((0.5 - a_t)/0.5)+self.m_dot_min
-            u_t = m_fan*self.cp_air*(self.T_sup - s_t[1])
-            u_c = u_t
-            u_h = 0
-            energy = -1*u_t/COPc/1000/2
+        # --- Supervisory control + PI inner loop ---
+        SAT_sp, ZAT_sp = a_t[0], a_t[1]   # [SAT_setpoint, ZoneT_setpoint]
+        T_zone = s_t[1]
+        total_energy = 0.0
+        n_loops = int(self.dt / self.pi_interval)  # how many PI updates inside one RL step
         
-        # Get states T_env, T_air
-        s_next_room = self.A@s_t[:2] + self.B@np.append(s_t[2:6], u_t)
-            
-        # Fan power
-        f_flow = m_fan/self.m_design
-        f_pl = self.c_FAN[0]+self.c_FAN[1]*f_flow+self.c_FAN[2]*f_flow**2+self.c_FAN[3]*f_flow**3+self.c_FAN[4]*f_flow**4
-        Q_fan = f_pl*self.m_design*self.dP/(self.e_tot*self.rho_air)
-        energy += Q_fan/1000/2
+        for _ in range(n_loops):
+            # PI damper control
+            error = ZAT_sp - T_zone
+            self.integral_error += error * self.pi_interval
+            self.integral_error = np.clip(self.integral_error, -1000, 1000)
+        
+            damper_signal = self.Kp * error + self.Ki * self.integral_error
+            damper_signal = np.clip(damper_signal, 0, 100)
+        
+            self.m_fan = self.m_dot_min + (damper_signal / 100) * (self.m_dot_max - self.m_dot_min)
+            m_fan = self.m_fan
+        
+            # Thermal dynamics
+            u_t = m_fan * self.cp_air * (SAT_sp - T_zone)
+            s_next_room = self.A @ s_t[:2] + self.B @ np.append(s_t[2:6], u_t)
+            T_zone = s_next_room[-1]
+        
+            # Fan power and energy
+            f_flow = m_fan / self.m_design
+            f_pl = (self.c_FAN[0] + self.c_FAN[1]*f_flow +
+                    self.c_FAN[2]*f_flow**2 + self.c_FAN[3]*f_flow**3 + self.c_FAN[4]*f_flow**4)
+            Q_fan = f_pl * self.m_design * self.dP / (self.e_tot * self.rho_air)
+            total_energy += (abs(u_t)/1000.0 + Q_fan/1000.0) * (self.pi_interval / self.dt)
+        
         
         # Time t
         #t = s_t[-1] + 0.5
@@ -299,7 +301,7 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         
         # Reward based on energy consumption and temperature control.
         #energy = -np.sqrt(a_t**2.)/COP/1000./2.
-        r = -1*energy + Utility
+        r = -1*total_energy + Utility
         
         # Assemble the states
         self.state = (np.concatenate([s_next_room, s_ext]) - self.low)/(self.high - self.low)
@@ -309,7 +311,16 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         if done == True:
             logger.warn("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
         
-        return np.array(self.state), r, done, {'u_t': u_t, 'a_t': a_t, 'Energy': energy, 'Penalty': Utility/(-10), 'Exceedance': Temp_exceed, 'lb': lb, 'ub': ub}
+        return np.array(self.state), r, done, {
+            'SAT_sp': SAT_sp,
+            'ZAT_sp': ZAT_sp,
+            'm_fan': self.m_fan,
+            'Energy': total_energy,
+            'Penalty': Utility/(-10),
+            'Exceedance': Temp_exceed,
+            'lb': lb,
+            'ub': ub
+        }
 
 
     # Reset the environment to its initial condition
@@ -327,5 +338,6 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.state = (np.array([T_env_0, T_air_0, T_cor, T_out, Qsg, Qint, Hour]) - self.low)/(self.high - self.low)
         
         return np.array(self.state)
+
 
 
