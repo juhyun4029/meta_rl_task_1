@@ -174,8 +174,8 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         
         # Supervisory control: RL gives [SAT_setpoint, ZAT_setpoint]
         self.action_space = spaces.Box(
-            low=np.array([10.0, 20.0]),   # [SAT_sp, ZAT_sp]
-            high=np.array([15.5, 24.0]),
+            low=np.array([25.0, 21.0]),  # [SAT_sp, ZA_sp]
+            high=np.array([40.0, 26.0]),
             dtype=np.float32
         )
         
@@ -338,6 +338,7 @@ class ContinuousBuildingControlEnvironment(gym.Env):
         self.state = (np.array([T_env_0, T_air_0, T_cor, T_out, Qsg, Qint, Hour]) - self.low)/(self.high - self.low)
         
         return np.array(self.state)
+
 
 
 
