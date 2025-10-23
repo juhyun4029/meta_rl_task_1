@@ -225,7 +225,15 @@ def ddpg_online(env, env_idx, policy_file, start, end,
     # Ensure correct shape for consistency
     if action_list.ndim == 1:
         action_list = action_list.reshape(-1, 1)
-
+             
+    # --- save arrays for plotting ---
+    np.save("time.npy", time)
+    np.save("T_air.npy", T_air)
+    np.save("lb_list.npy", np.array(lb_list))
+    np.save("ub_list.npy", np.array(ub_list))
+    np.save("m_fan.npy", np.array(mfan_list))
+                  
     return T_air, time, T_out, Q_SG, action_list, np.array(energy_list[1:]), np.array(penalty_list[1:]), np.array(temp_metric_list[1:]), lb_list, ub_list, mfan_list
+
 
 
