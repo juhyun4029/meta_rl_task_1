@@ -27,7 +27,7 @@ def main():
     
 	#run ddpg
     T_air, time, T_out, Q_SG, action_list, energy_list, penalty_list, \
-    temp_metric_list, lb_list, ub_list = \
+    temp_metric_list, lb_list, ub_list, mfan_list = \
     ddpg_online(env = env, env_idx = 0, policy_file = policy_file,
                 start = online_start, end = online_end,
                 gamma = 0.99, epochs = 50,
@@ -58,6 +58,7 @@ def main():
 	    'energy_meta': energy_list.flatten(),
 	    'penalty_meta': penalty_list,
 	    'exceedance_meta': temp_metric_list
+		'm_fan': mfan_list[:len(energy_list)]
 	})
 	df = pd.concat([df, df_action], axis=1)
 	
