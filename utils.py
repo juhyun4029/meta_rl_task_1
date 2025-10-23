@@ -66,8 +66,7 @@ def mlp_actor_critic(x, a, hidden_sizes=(256,256), activation=tf.nn.relu,
     act_low = tf.constant(action_space.low, dtype=tf.float32)
     # tanh output ∈ [-1,1] → rescale to [low, high]                     
     with tf.compat.v1.variable_scope('pi'):
-        raw_pi = mlp(x, list(hidden_sizes)+[act_dim], activation, output_activation)
-        pi = act_low + (raw_pi + 1.0) * 0.5 * (act_high - act_low)
+        pi = mlp(x, list(hidden_sizes)+[act_dim], activation, output_activation)
     with tf.compat.v1.variable_scope('q'):
         q = tf.squeeze(mlp(tf.concat([x,a], axis=-1), list(hidden_sizes)+[1], activation, None), axis=1)
     with tf.compat.v1.variable_scope('q', reuse=True):
