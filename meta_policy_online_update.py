@@ -15,7 +15,7 @@ def main():
 
     #set up environment
     data_file ='weather_data_2013_to_2017_winter_pandas.csv'
-    policy_file = "model/best/saved_model_999.ckpt"
+    policy_file = None
     online_start = 6000.
     online_end = 8160.
     env = BEnv(data_file, start = online_start, end = online_end,
