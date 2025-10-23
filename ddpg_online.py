@@ -131,6 +131,7 @@ def ddpg_online(env, env_idx, policy_file, start, end,
     temp_metric_list = [0]
     lb_list = []
     ub_list = []
+    mfan_list = []              
     
     # Main loop: collect experience in env and update/log each epoch
     for t in range(total_steps):
@@ -157,6 +158,7 @@ def ddpg_online(env, env_idx, policy_file, start, end,
         temp_metric_list.append(temp_metric_list[-1] + dic['Exceedance'])
         lb_list.append(dic['lb'])
         ub_list.append(dic['ub'])
+        mfan_list.append(dic['m_fan'])     
 
         # Ignore the "done" signal if it comes from hitting the time
         # horizon (that is, when it's an artificial terminal signal
@@ -224,5 +226,6 @@ def ddpg_online(env, env_idx, policy_file, start, end,
     if action_list.ndim == 1:
         action_list = action_list.reshape(-1, 1)
 
-    return T_air, time, T_out, Q_SG, action_list, np.array(energy_list[1:]), np.array(penalty_list[1:]), np.array(temp_metric_list[1:]), lb_list, ub_list
+    return T_air, time, T_out, Q_SG, action_list, np.array(energy_list[1:]), np.array(penalty_list[1:]), np.array(temp_metric_list[1:]), lb_list, ub_list, mfan_list
+
 
